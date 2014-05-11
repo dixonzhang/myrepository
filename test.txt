@@ -3,3 +3,4 @@ Git is free software.
 new branch test
 Creating a new branch is quick & simple.
 no-ff
+stash
