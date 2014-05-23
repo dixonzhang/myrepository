@@ -68,7 +68,7 @@ public class TimerBasedAnimation extends JPanel implements ActionListener {
 		rh.put(RenderingHints.KEY_RENDERING,
 				RenderingHints.VALUE_RENDER_QUALITY);
 
-		g2.setRenderingHints(rh);
+		g2.setRenderingHints(rh);// RenderingHints 按照算法绘制， 这里抗锯齿 
 		Dimension size = getSize();
 
 		if (initialize) {
