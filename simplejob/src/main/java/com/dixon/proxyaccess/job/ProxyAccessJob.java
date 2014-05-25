@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 
 import com.dixon.proxyaccess.bean.IpPort;
 import com.dixon.proxyaccess.service.IProxyAccessService;
-import com.dixon.proxyaccess.util.HttpClientUtil;
+import com.dixon.utils.HttpClientUtil;
 
 @Service
 public class ProxyAccessJob {

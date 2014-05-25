@@ -13,10 +13,10 @@
        ">
        
 	<!-- 启动Spring MVC的注解功能，完成请求和注解POJO的映射 -->
-	<context:component-scan base-package="com.dixon.proxyaccess" />
+	<context:component-scan base-package="com.dixon" />
 	
 	
-	<bean id="proxyExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" scope="singleton" lazy-init="true">
+	<bean id="proxyExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" scope="singleton">
 		<property name="corePoolSize" value="10" />
 		<property name="maxPoolSize" value="30" />
 		<property name="queueCapacity" value="400" />
@@ -27,7 +27,7 @@
 		<property name="threadNamePrefix" value="proxyTask" />
 	</bean>
 	
-	<bean id="accessExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" scope="singleton" lazy-init="true">
+	<bean id="accessExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" scope="singleton">
 		<property name="corePoolSize" value="30" />
 		<property name="maxPoolSize" value="50" />
 		<property name="queueCapacity" value="200" />
@@ -39,7 +39,7 @@
 	</bean>
 	
 
-	<bean id="shceduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+	<!-- <bean id="shceduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
 				<ref bean="proxyAccessJobTrigger" />
@@ -49,13 +49,13 @@
 	
 	<bean id="proxyAccessJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="proxyAccessJobDetail" />
-		<!-- 每个钟执行一次 -->
+		每个钟执行一次
 		<property name="cronExpression" value="0 0 * * * ?" />
 	</bean>
 	
 	<bean id="proxyAccessJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
-		<property name="targetObject" ref="proxyAccessJob" />
+		<property name="targetObject" ref="simpleAccessJob" />
 		<property name="targetMethod"  value="doJob" />
-	</bean>
+	</bean> -->
 	
 </beans>

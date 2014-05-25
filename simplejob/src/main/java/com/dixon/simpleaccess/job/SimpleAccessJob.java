@@ -1,4 +1,4 @@
-package com.dixon.proxy;
+package com.dixon.simpleaccess.job;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,28 +10,30 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Resource;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.springframework.stereotype.Service;
 
-import com.dixon.proxy.utils.ClientUtil;
+import com.dixon.utils.HttpClientUtil;
 
-public class ProxyTest4 {
+@Service
+public class SimpleAccessJob {
+	@Resource
+	private Executor accessExecutor;
 	
-	private static ThreadPoolExecutor executor = new ThreadPoolExecutor(30, 50, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(200));
-
-	public static void main(String[] args) {
+	public void doJob() {
 		Random random = new Random();
 		
 		List<String> urlList = readUrls();
 		
+		int index = 0;
 		for(String url : urlList){
 			
 			Set<String> accessUrlSet = new HashSet<String>(10);
@@ -55,18 +57,19 @@ public class ProxyTest4 {
 				}
 			}
 			
-			executor.execute(new Task(accessUrlSet, null));
+			accessExecutor.execute(new Task(accessUrlSet, index));
+			index++;
 		}
+		
 	}
-
 	
-	private static List<String> readUrls() {
+	private List<String> readUrls() {
 		File file = new File("d:/taobaospmurls.txt");
 
 		FileReader fr = null;
 		BufferedReader br = null;
 		
-		List<String> urlList = new ArrayList<>(100);
+		List<String> urlList = new ArrayList<String>(100);
 
 		try {
 			fr = new FileReader(file);
@@ -92,22 +95,22 @@ public class ProxyTest4 {
 		return urlList;
 	}
 	
-	private static class Task implements Runnable {
+	private class Task implements Runnable {
 		private Set<String> urlSet;
-		private CountDownLatch latch;
+		private int index;
 
-		private Task(Set<String> urlSet, CountDownLatch latch) {
+		private Task(Set<String> urlSet, int index) {
 			this.urlSet = urlSet;
-			this.latch = latch;
+			this.index = index;
 		}
 
 		@Override
 		public void run() {
-			HttpClient httpClient = ClientUtil.getHttpClient();
+			HttpClient httpClient = HttpClientUtil.getHttpClient();
 
 			try {
 				StringBuffer sb = new StringBuffer(1000);
-				sb.append("\n>>>>>>\n");
+				sb.append("\n>>>>>>访问第" + index + "\n");
 				
 				for (Iterator<String> it = urlSet.iterator(); it.hasNext();) {
 					String url = it.next();
@@ -119,13 +122,9 @@ public class ProxyTest4 {
 				
 				System.out.println(sb.toString());
 			} catch (HttpException e) {
-//				e.printStackTrace();
 			} catch (IOException e) {
-//				e.printStackTrace();
 			} finally {
-				ClientUtil.shutdown(httpClient);
-				if(latch != null)
-					latch.countDown();
+				HttpClientUtil.shutdown(httpClient);
 			}
 		}
 	}
