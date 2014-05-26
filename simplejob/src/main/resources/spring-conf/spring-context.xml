@@ -13,7 +13,7 @@
        ">
        
 	<!-- 启动Spring MVC的注解功能，完成请求和注解POJO的映射 -->
-	<context:component-scan base-package="com.dixon.proxyaccess" />
+	<context:component-scan base-package="com.dixon" />
 	
 	
 	<bean id="proxyExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" scope="singleton" lazy-init="true">
@@ -54,7 +54,7 @@
 	</bean>
 	
 	<bean id="proxyAccessJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
-		<property name="targetObject" ref="proxyAccessJob" />
+		<property name="targetObject" ref="simpleAccessJob" />
 		<property name="targetMethod"  value="doJob" />
 	</bean>
 	

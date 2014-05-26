@@ -1,4 +1,4 @@
-package com.dixon.proxyaccess.util;
+package com.dixon.utils;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;

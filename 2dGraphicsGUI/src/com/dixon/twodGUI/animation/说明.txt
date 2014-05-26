@@ -1,0 +1,15 @@
+1. IsEDTExample : 线程变换table的cell颜色
+
+2. TimerBasedAnimation ： 绘制渐变的圆，使用抗锯齿绘制，使圆比较圆滑
+
+3. SwingTimerBasedAnimationScaleRotate ： 
+	1)    比例缩放(scale)：放大和缩小从一个固定点出发的所有距离；
+    2)    旋转(rotate)：环绕着一个固定中心旋转所有点；
+    3)    平移(translate)：将所有的点移动一个固定量；
+    4)    切变(shear)：使一个线条固定不变，再按照与该固定线条之间的距离，成比例地将与该线条平行的各个线条"滑动"一个距离量。
+
+4. FadeOutImage : 淡变隐藏图片(改变透明度)， 使用graphics2d 的setComposite()
+
+5. FontSizeAnimation ： 改变字体大小， FontMetrics，获取字体的指标
+
+6. Hypnosis1 ： 曲线画法，GradientPaint，GeneralPath
