@@ -13,3 +13,5 @@
 5. FontSizeAnimation ： 改变字体大小， FontMetrics，获取字体的指标
 
 6. Hypnosis1 ： 曲线画法，GradientPaint，GeneralPath
+
+7.StaticGenerator ： 图片光栅 Raster，ColorModel
