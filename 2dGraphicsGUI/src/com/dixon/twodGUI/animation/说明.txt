@@ -15,3 +15,9 @@
 6. Hypnosis1 ： 曲线画法，GradientPaint，GeneralPath
 
 7.StaticGenerator ： 图片光栅 Raster，ColorModel
+
+8.Animate ： How to create Animation: Paint and thread
+
+9.AppletAnimation : 线程动态paint改变文字
+
+10.Bouncer ： 跳跃，旋转的曲线

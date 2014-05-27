@@ -6,7 +6,7 @@
 	<classpathentry kind="lib" path="F:/备用软件/thrift-0.9.1/lib/java/build/lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="F:/备用软件/thrift-0.9.1/lib/java/build/lib/httpclient-4.2.5.jar"/>
 	<classpathentry kind="lib" path="F:/备用软件/thrift-0.9.1/lib/java/build/lib/httpcore-4.2.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Administrator/workspace/SP2P_T/WebRoot/WEB-INF/lib/commons-codec-1.3.jar"/>
 	<classpathentry kind="lib" path="F:/jar包/commons-httpclient-3.1.jar"/>
+	<classpathentry kind="lib" path="F:/jar包/commons-codec-1.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
