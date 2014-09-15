@@ -27,14 +27,14 @@ public class ProxyTest2 {
 			// 设置代理开始。如果代理服务器需要验证的话，可以修改用户名和密码
 			// 192.168.1.107为代理地址 808为代理端口
 			// UsernamePasswordCredentials后的两个参数为代理的用户名密码
-			httpClient.getCredentialsProvider().setCredentials(
+			/*httpClient.getCredentialsProvider().setCredentials(
 					new AuthScope("23.94.44.10", 7808),
 					new UsernamePasswordCredentials("", ""));
 			
 			
 			HttpHost proxy = new HttpHost("121.22.29.182", 80);
 			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY,
-					proxy);
+					proxy);*/
 			// 设置代理结束
 			/*HttpGet get = new HttpGet("http://shop107006182.taobao.com/search.htm?spm=a1z10.1.w5002-4287991988.1.w3Jjn4&search=y");*/
 //			HttpGet get = new HttpGet("http://yaoaii.taobao.com/search.htm?spm=a1z10.1.w5002-1566833049.1.OLPHZW&search=y");

@@ -21,3 +21,9 @@
 9.AppletAnimation : 线程动态paint改变文字
 
 10.Bouncer ： 跳跃，旋转的曲线
+
+11.TextBouncer : 跳动的文字
+
+12.Main : Make your own animation from a series of images
+
+13.ImageComposite ： 图像合成
