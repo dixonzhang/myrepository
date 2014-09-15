@@ -15,15 +15,18 @@ public class DiscardServerHandler extends ChannelInboundHandlerAdapter { // (1)
 //		// Discard the received data silently.
 //		((ByteBuf) msg).release(); // (3)
 		
-		ByteBuf in = (ByteBuf) msg;
-	    try {
-	        while (in.isReadable()) { // (1)
-	            System.out.print((char) in.readByte());
-	            System.out.flush();
-	        }
-	    } finally {
-	        ReferenceCountUtil.release(msg); // (2)
-	    }
+//		ByteBuf in = (ByteBuf) msg;
+//	    try {
+//	        while (in.isReadable()) { // (1)
+//	            System.out.print((char) in.readByte());
+//	            System.out.flush();
+//	        }
+//	    } finally {
+//	        ReferenceCountUtil.release(msg); // (2)
+//	    }
+		
+		ctx.write(msg);
+		ctx.flush();
 	}
 
 	@Override
