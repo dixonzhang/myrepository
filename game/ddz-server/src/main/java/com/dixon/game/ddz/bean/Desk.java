@@ -38,6 +38,18 @@ public class Desk implements Comparable<Desk>{
 		return ++grabTimes;
 	}
 	
+	//过 的次数，=2时，重新出牌
+	private int passTimes = 0;
+	
+	public int passTimesAdd(){
+		return ++passTimes;
+	}
+	public void passTimesReset(){
+		passTimes = 0;
+	}
+	public int getPassTimes(){
+		return passTimes;
+	}
 	
 	//派牌
 	private Map<Integer, List<Poker>> dealPokerMap;

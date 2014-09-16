@@ -13,16 +13,19 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.websocket.Session;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import com.dixon.game.ddz.bean.Desk;
 import com.dixon.game.ddz.bean.Message;
 import com.dixon.game.ddz.bean.Player;
+import com.dixon.game.ddz.bean.Poker;
 import com.dixon.game.ddz.enu.ChatType;
 import com.dixon.game.ddz.enu.RespType;
 import com.dixon.game.ddz.resp.BaseRes;
 import com.dixon.game.ddz.resp.DeskInfoRes;
 import com.dixon.game.ddz.resp.DeskListRes;
+import com.dixon.game.ddz.resp.PlayRes;
 import com.dixon.game.ddz.utils.DizhuShuffler;
 
 public class Allocator {
@@ -186,6 +189,7 @@ public class Allocator {
 		
 		desk.currentIndexAdd();
 		desk.grabTimesAdd();
+		
 		if("1".equals(grab)){//当前用户抢地主
 			for(int i = 0; i < desk.getPlayerList().size(); i++){
 				if(playerId.equals(desk.getPlayerList().get(i).getPlayerId())){
@@ -199,7 +203,13 @@ public class Allocator {
 		
 		//抢完地主
 		if(4 == desk.getGrabTimes()){
-			//TODO 通知地主出牌
+			// 通知地主出牌
+			Player dizhu = desk.getPlayerList().get(desk.getDizhuIndex());
+			
+			PlayRes res = new PlayRes(RespType.playFirst.toString(), "请出牌");
+			
+			String resp = JSONObject.fromObject(res).toString();
+			allSessionMap.get(dizhu.getPlayerId()).getBasicRemote().sendText(resp);
 		}
 		
 	}
@@ -207,12 +217,69 @@ public class Allocator {
 	/**
 	 * 
 	 * @param msg
+	 * @throws IOException 
 	 */
-	public void play(Message msg){
-		
+	@SuppressWarnings("unchecked")
+	public void play(Message msg) throws IOException{
+		String pokerStr = msg.getData().get("poker");
+		Desk desk = userDeskMap.get(msg.getPlayerId());
+		//不出牌，过
+		if(null == pokerStr || "".equals(pokerStr)){
+			
+			//过
+			desk.passTimesAdd();
+			int nextIndex = desk.currentIndexAdd();
+			Player nextPlayer = desk.getPlayerList().get(nextIndex);
+			
+			//过了两次， 让下一家重新出牌
+			if(2 == desk.getPassTimes()){
+				PlayRes res = new PlayRes(RespType.playFirst.toString(), "请出牌");
+				
+				String resp = JSONObject.fromObject(res).toString();
+				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendText(resp);
+			}
+			else{
+				//下一家跟牌
+				PlayRes res = new PlayRes(RespType.playFollow.toString(), "请跟牌");
+				
+				String resp = JSONObject.fromObject(res).toString();
+				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendText(resp);
+			}
+		}
+		else{
+			//重置过的次数
+			desk.passTimesReset();
+			
+			Vector<Poker> followPokerList = (Vector<Poker>) JSONArray.toCollection(JSONArray.fromObject(pokerStr), Poker.class);
+			//当前出的牌
+			desk.setCurrentPokers(followPokerList);
+			
+			//移除当前玩家出了的牌
+			Player currPlayer = desk.getPlayerList().get(desk.getCurrentIndex());
+			currPlayer.getPokerList().removeAll(followPokerList);
+			
+			//如果当前玩家牌出完了，就赢了
+			if(currPlayer.getPokerList().isEmpty()){
+				for(Player p2 : desk.getPlayerList()){
+					DeskInfoRes res = new DeskInfoRes(RespType.win.toString(), "获胜");
+					res.setDesk(desk);
+					
+					String resp = JSONObject.fromObject(res).toString();
+					allSessionMap.get(p2.getPlayerId()).getBasicRemote().sendText(resp);
+				}
+			}
+			else{
+				int nextIndex = desk.currentIndexAdd();
+				Player nextPlayer = desk.getPlayerList().get(nextIndex);
+				
+				PlayRes res = new PlayRes(RespType.playFollow.toString(), "请跟牌");
+				
+				String resp = JSONObject.fromObject(res).toString();
+				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendText(resp);
+			}
+		}
 	}
-	
-	
+
 	private void remove(String playerId){
 		//移除session
 		allSessionMap.remove(playerId);
