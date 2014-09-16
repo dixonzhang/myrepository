@@ -55,7 +55,10 @@ public class DizhuShuffler {
 	 * @param list
 	 * @return
 	 */
-	public static Map<Integer, List<Poker>> deal(List<Poker> list){
+	public static Map<Integer, List<Poker>> deal(){
+		
+		List<Poker> list = suffle();
+		
 		Map<Integer, List<Poker>> map = new HashMap<Integer, List<Poker>>(4);
 		
 		for(int i = 0; i < 3; i++){
@@ -70,7 +73,7 @@ public class DizhuShuffler {
 		List<Poker> list = suffle();
 		
 		
-		Map<Integer, List<Poker>> map = deal(list);
+		Map<Integer, List<Poker>> map = deal();
 		for(Iterator<Entry<Integer, List<Poker>>> it = map.entrySet().iterator(); it.hasNext(); ){
 			Entry<Integer, List<Poker>> entry = it.next();
 			System.out.println(entry.getKey() + ",,,,,,,,,,");

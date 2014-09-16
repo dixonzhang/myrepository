@@ -1,6 +1,8 @@
 package com.dixon.game.ddz.endpoint;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
@@ -12,6 +14,8 @@ import net.sf.json.JSONObject;
 
 import com.dixon.game.ddz.bean.Message;
 import com.dixon.game.ddz.enu.ChatType;
+import com.dixon.game.ddz.enu.RespType;
+import com.dixon.game.ddz.resp.BaseRes;
 import com.dixon.game.ddz.service.Allocator;
 
 @ServerEndpoint(value="/websocket/ddz")
@@ -34,34 +38,43 @@ public class DoudizhuServerEndpoint {
     }
     @OnMessage
     public void onMessage(Session session, String message) {
-    	System.out.println("onMessage　" + session.getId() + ", " + message);
-    	
-    	JSONObject json = JSONObject.fromObject(message);
-    	
-    	Message msg = (Message)JSONObject.toBean(json, Message.class);
-    	
-    	if(ChatType.valueOf(msg.getChatType()) == ChatType.login){
+    	try {
+	    	System.out.println("onMessage　" + session.getId() + ", " + message);
+	    	
+	    	JSONObject json = JSONObject.fromObject(message);
+	    	
+	    	Message msg = (Message)JSONObject.toBean(json, Message.class);
+	    	
+	    	if(ChatType.valueOf(msg.getChatType()) == ChatType.login){
+					allocator.login(session, msg);
+	    	}
+	    	else{
+	    		allocator.allocate(msg);
+	    	}
+    	} catch (IOException e) {
     		try {
-				allocator.login(session, msg);
-			} catch (IOException e) {
-				e.printStackTrace();
+    			String resp = JSONObject.fromObject(new BaseRes(RespType.error.toString(), "系统错误")).toString();
+				session.getBasicRemote().sendText(resp);
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
-    	}
-    	else{
-    		allocator.allocate(msg);
     	}
     }
     @OnClose
     public void onClose(Session peer) {
-    	System.out.println("onClose");
+    	allocator.logout(peer);
     }
     
     public static void main(String[] args) {
     	Message msgBean = new Message();
-    	msgBean.setUserId("111111");
+    	msgBean.setPlayerId("111111");
     	msgBean.setChatType("login");
     	
-    	
+    	Map<String, String> data = new HashMap<String, String>(2);
+    	data.put("111", "111");
+    	data.put("222", "2");
+
+    	msgBean.setData(data);
     	
     	JSONObject json = JSONObject.fromObject(JSONObject.fromObject(msgBean).toString());
     	

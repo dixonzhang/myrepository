@@ -3,14 +3,14 @@ package com.dixon.game.ddz.bean;
 import java.util.Map;
 
 public class Message {
-	private String userId;
+	private String playerId;
 	private String chatType;
 	private Map<String, String> data;
-	public String getUserId() {
-		return userId;
+	public String getPlayerId() {
+		return playerId;
 	}
-	public void setUserId(String userId) {
-		this.userId = userId;
+	public void setPlayerId(String userId) {
+		this.playerId = userId;
 	}
 	public String getChatType() {
 		return chatType;
