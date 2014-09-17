@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
@@ -15,15 +16,24 @@ import javax.websocket.server.ServerEndpoint;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import com.dixon.game.ddz.bean.Message;
 import com.dixon.game.ddz.bean.Poker;
+import com.dixon.game.ddz.decoders.MessageTextDecoder;
+import com.dixon.game.ddz.encoders.BaseResEncoder;
+import com.dixon.game.ddz.encoders.DeskInfoResEncoder;
+import com.dixon.game.ddz.encoders.DeskListResEncoder;
+import com.dixon.game.ddz.encoders.PlayResEncoder;
 import com.dixon.game.ddz.enu.ChatType;
 import com.dixon.game.ddz.enu.ColourType;
 import com.dixon.game.ddz.enu.RespType;
+import com.dixon.game.ddz.message.Message;
 import com.dixon.game.ddz.resp.BaseRes;
 import com.dixon.game.ddz.service.Allocator;
 
-@ServerEndpoint(value="/websocket/ddz")
+@ServerEndpoint(
+	value = "/websocket/ddz",
+	decoders = {MessageTextDecoder.class },
+	encoders = {BaseResEncoder.class, DeskInfoResEncoder.class, DeskListResEncoder.class, PlayResEncoder.class}
+)
 public class DoudizhuServerEndpoint {
 	static Allocator allocator;
 	
@@ -42,25 +52,20 @@ public class DoudizhuServerEndpoint {
 		}
     }
     @OnMessage
-    public void onMessage(Session session, String message) {
+    public void onMessage(Session session, Message message) {
     	try {
-	    	System.out.println("onMessage　" + session.getId() + ", " + message);
-	    	
-	    	JSONObject json = JSONObject.fromObject(message);
-	    	
-	    	Message msg = (Message)JSONObject.toBean(json, Message.class);
-	    	
-	    	if(ChatType.valueOf(msg.getChatType()) == ChatType.login){
-					allocator.login(session, msg);
+	    	if(ChatType.valueOf(message.getChatType()) == ChatType.login){
+				allocator.login(session, message);
 	    	}
 	    	else{
-	    		allocator.allocate(msg);
+	    		allocator.allocate(message);
 	    	}
-    	} catch (IOException e) {
+    	} catch (Exception e) {
     		try {
-    			String resp = JSONObject.fromObject(new BaseRes(RespType.error.toString(), "系统错误")).toString();
-				session.getBasicRemote().sendText(resp);
+				session.getBasicRemote().sendObject(new BaseRes(RespType.error.toString(), "系统错误"));
 			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (EncodeException e1) {
 				e1.printStackTrace();
 			}
     	}
