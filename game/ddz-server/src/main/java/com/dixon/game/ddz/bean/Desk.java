@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import com.dixon.game.ddz.common.bean.Player;
+import com.dixon.game.ddz.common.bean.Poker;
+
 public class Desk implements Comparable<Desk>{
 	private int deskNum;
 	//玩家，关系出牌顺序

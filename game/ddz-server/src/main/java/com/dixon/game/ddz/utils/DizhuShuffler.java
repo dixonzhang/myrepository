@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.dixon.game.ddz.bean.Poker;
-import com.dixon.game.ddz.enu.ColourType;
+import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.ColourType;
+
 
 /**
  * 洗牌器，得到打乱的54张牌

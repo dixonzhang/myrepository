@@ -2,9 +2,7 @@ package com.dixon.game.ddz.endpoint;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
@@ -14,25 +12,24 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
-import com.dixon.game.ddz.bean.Poker;
+import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.ChatType;
+import com.dixon.game.ddz.common.enu.ColourType;
+import com.dixon.game.ddz.common.enu.RespType;
+import com.dixon.game.ddz.common.message.Message;
 import com.dixon.game.ddz.decoders.MessageTextDecoder;
 import com.dixon.game.ddz.encoders.BaseResEncoder;
 import com.dixon.game.ddz.encoders.DeskInfoResEncoder;
 import com.dixon.game.ddz.encoders.DeskListResEncoder;
 import com.dixon.game.ddz.encoders.PlayResEncoder;
-import com.dixon.game.ddz.enu.ChatType;
-import com.dixon.game.ddz.enu.ColourType;
-import com.dixon.game.ddz.enu.RespType;
-import com.dixon.game.ddz.message.Message;
 import com.dixon.game.ddz.resp.BaseRes;
 import com.dixon.game.ddz.service.Allocator;
 
 @ServerEndpoint(
 	value = "/websocket/ddz",
-	decoders = {MessageTextDecoder.class },
-	encoders = {BaseResEncoder.class, DeskInfoResEncoder.class, DeskListResEncoder.class, PlayResEncoder.class}
+	encoders = {BaseResEncoder.class, DeskInfoResEncoder.class, DeskListResEncoder.class, PlayResEncoder.class},
+	decoders = {MessageTextDecoder.class }
 )
 public class DoudizhuServerEndpoint {
 	static Allocator allocator;
@@ -46,11 +43,19 @@ public class DoudizhuServerEndpoint {
     	//登录成功返回桌信息
     	System.out.println("onOpen " + session.getId());
     	try {
-			session.getBasicRemote().sendText("u logined");
+			session.getBasicRemote().sendObject(new BaseRes(RespType.notify.toString(), "连接成功！"));;
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (EncodeException e) {
 			e.printStackTrace();
 		}
     }
+    
+//    @OnMessage
+//    public void onMessage(Session session, String message) {
+//    	System.out.println("text:" + message);
+//    }
+    
     @OnMessage
     public void onMessage(Session session, Message message) {
     	try {

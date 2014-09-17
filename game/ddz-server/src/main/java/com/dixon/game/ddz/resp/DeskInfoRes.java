@@ -1,17 +1,17 @@
 package com.dixon.game.ddz.resp;
 
-import com.dixon.game.ddz.bean.Desk;
+import com.dixon.game.ddz.common.bean.DeskInfoView;
 
 public class DeskInfoRes extends BaseRes {
-	private Desk desk;
+	private DeskInfoView deskInfo;
 	public DeskInfoRes(String respType, String respDesc) {
 		super(respType, respDesc);
 	}
-	public Desk getDesk() {
-		return desk;
+	public DeskInfoView getDeskInfo() {
+		return deskInfo;
 	}
-	public void setDesk(Desk desk) {
-		this.desk = desk;
+	public void setDeskInfo(DeskInfoView deskInfo) {
+		this.deskInfo = deskInfo;
 	}
 	
 }

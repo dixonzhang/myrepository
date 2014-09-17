@@ -2,7 +2,6 @@ package com.dixon.game.ddz.decoders;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.websocket.DecodeException;
@@ -12,13 +11,13 @@ import javax.websocket.EndpointConfig;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-import com.dixon.game.ddz.bean.Poker;
-import com.dixon.game.ddz.enu.ChatType;
-import com.dixon.game.ddz.enu.ColourType;
-import com.dixon.game.ddz.message.GrabMessage;
-import com.dixon.game.ddz.message.JoinMessage;
-import com.dixon.game.ddz.message.Message;
-import com.dixon.game.ddz.message.PlayMessage;
+import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.ChatType;
+import com.dixon.game.ddz.common.enu.ColourType;
+import com.dixon.game.ddz.common.message.GrabMessage;
+import com.dixon.game.ddz.common.message.JoinMessage;
+import com.dixon.game.ddz.common.message.Message;
+import com.dixon.game.ddz.common.message.PlayMessage;
 
 public class MessageTextDecoder implements Decoder.Text<Message>{
 	Logger logger = Logger.getLogger(getClass().getName());
@@ -36,7 +35,7 @@ public class MessageTextDecoder implements Decoder.Text<Message>{
 	@Override
 	public Message decode(String s) throws DecodeException {
 		Message msg = null;
-		if(willDecode(s)){
+//		if(willDecode(s)){
 			logger.info(json.toString());
 			ChatType chatType = ChatType.valueOf(json.getString("chatType"));
 			
@@ -48,7 +47,7 @@ public class MessageTextDecoder implements Decoder.Text<Message>{
 			}
 			else if(chatType == ChatType.play){
 				PlayMessage pmsg = (PlayMessage)JSONObject.toBean(json, PlayMessage.class);
-				Vector<Poker> list = (Vector<Poker>) JSONArray.toCollection(JSONArray.fromObject(json.get("pokerList")), Poker.class);
+				List<Poker> list = (List<Poker>) JSONArray.toCollection(JSONArray.fromObject(json.get("pokerList")), Poker.class);
 				pmsg.setPokerList(list);
 				
 				msg = pmsg;
@@ -56,24 +55,23 @@ public class MessageTextDecoder implements Decoder.Text<Message>{
 			else{
 				msg = (Message)JSONObject.toBean(json, Message.class);
 			}
-		}
-		else 
-			throw new DecodeException(s, "[Message] Can't decode.");
+//		}
+//		else 
+//			throw new DecodeException(s, "[Message] Can't decode.");
 		
 		return msg;
 	}
 
 	@Override
 	public boolean willDecode(String s) {
-		
-		json = JSONObject.fromObject(s);
-		if(json != null){
-			String chatType = (String)json.get("chatType");
-			try{
-				ChatType.valueOf(chatType);
-				return true;
-			}catch (Exception e){
-			}
+		try{
+			json = JSONObject.fromObject(s);
+			if(json != null){
+				String chatType = (String)json.get("chatType");
+					ChatType.valueOf(chatType);
+					return true;
+		}
+		}catch (Exception e){
 		}
 		
 		return false;

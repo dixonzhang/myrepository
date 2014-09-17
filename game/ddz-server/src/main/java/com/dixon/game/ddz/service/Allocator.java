@@ -14,17 +14,17 @@ import java.util.concurrent.ConcurrentMap;
 import javax.websocket.EncodeException;
 import javax.websocket.Session;
 
-import net.sf.json.JSONArray;
-
 import com.dixon.game.ddz.bean.Desk;
-import com.dixon.game.ddz.bean.Player;
-import com.dixon.game.ddz.bean.Poker;
-import com.dixon.game.ddz.enu.ChatType;
-import com.dixon.game.ddz.enu.RespType;
-import com.dixon.game.ddz.message.GrabMessage;
-import com.dixon.game.ddz.message.JoinMessage;
-import com.dixon.game.ddz.message.Message;
-import com.dixon.game.ddz.message.PlayMessage;
+import com.dixon.game.ddz.common.bean.DeskInfoView;
+import com.dixon.game.ddz.common.bean.DeskListView;
+import com.dixon.game.ddz.common.bean.Player;
+import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.ChatType;
+import com.dixon.game.ddz.common.enu.RespType;
+import com.dixon.game.ddz.common.message.GrabMessage;
+import com.dixon.game.ddz.common.message.JoinMessage;
+import com.dixon.game.ddz.common.message.Message;
+import com.dixon.game.ddz.common.message.PlayMessage;
 import com.dixon.game.ddz.resp.BaseRes;
 import com.dixon.game.ddz.resp.DeskInfoRes;
 import com.dixon.game.ddz.resp.DeskListRes;
@@ -40,9 +40,9 @@ public class Allocator {
 	private static ConcurrentMap<Integer, Desk> deskMap = new ConcurrentHashMap<Integer, Desk>(10);	
 	
 	public Allocator(){
-		for(int i = 0; i < 10; i++){
+		for(int i = 1; i <= 10; i++){
 			Desk desk = new Desk();
-			desk.setDeskNum(i+1);
+			desk.setDeskNum(i);
 			
 			deskMap.put(i, desk);
 		}
@@ -73,7 +73,7 @@ public class Allocator {
 			Collections.sort(list);//排序
 			
 			DeskListRes res = new DeskListRes(RespType.deskList.toString(), "获取桌列表成功");
-			res.setDesks(list);
+			res.setDesks(convert2DeskList(list));
 			
 			session.getBasicRemote().sendObject(res);
 		}
@@ -108,8 +108,10 @@ public class Allocator {
 		if(null != msg.getDeskId()){
 			Desk desk = deskMap.get(msg.getDeskId());
 			Vector<Player> playerList = desk.getPlayerList();
-			if(playerList == null)
-				playerList = new Vector<Player>();
+			if(playerList == null){
+				playerList = new Vector<Player>(3);
+				desk.setPlayerList(playerList);
+			}
 			
 			if(playerList.size() < 3){
 				
@@ -171,8 +173,8 @@ public class Allocator {
 			throws IOException, EncodeException {
 		for(Player p2 : playerList){
 			
-			DeskInfoRes res = new DeskInfoRes(RespType.deskInfo.toString(), "获取桌信息表成功");
-			res.setDesk(desk);
+			DeskInfoRes res = new DeskInfoRes(RespType.deskInfo.toString(), "获取桌信息成功");
+			res.setDeskInfo(convert2DeskInfo(desk));
 			
 			allSessionMap.get(p2.getPlayerId()).getBasicRemote().sendObject(res);;
 		}
@@ -209,6 +211,7 @@ public class Allocator {
 			Player dizhu = desk.getPlayerList().get(desk.getDizhuIndex());
 			
 			PlayRes res = new PlayRes(RespType.playFirst.toString(), "请出牌");
+			res.setLastPlayerFollow(false);
 			
 			allSessionMap.get(dizhu.getPlayerId()).getBasicRemote().sendObject(res);
 		}
@@ -221,7 +224,6 @@ public class Allocator {
 	 * @throws IOException 
 	 * @throws EncodeException 
 	 */
-	@SuppressWarnings("unchecked")
 	public void play(PlayMessage msg) throws IOException, EncodeException{
 		
 		List<Poker> pokerList = msg.getPokerList();
@@ -237,12 +239,14 @@ public class Allocator {
 			//过了两次， 让下一家重新出牌
 			if(2 == desk.getPassTimes()){
 				PlayRes res = new PlayRes(RespType.playFirst.toString(), "请出牌");
+				res.setLastPlayerFollow(false);
 				
 				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendObject(res);
 			}
 			else{
 				//下一家跟牌
 				PlayRes res = new PlayRes(RespType.playFollow.toString(), "请跟牌");
+				res.setLastPlayerFollow(false);
 				
 				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendObject(res);
 			}
@@ -263,7 +267,7 @@ public class Allocator {
 			if(currPlayer.getPokerList().isEmpty()){
 				for(Player p2 : desk.getPlayerList()){
 					DeskInfoRes res = new DeskInfoRes(RespType.win.toString(), "获胜");
-					res.setDesk(desk);
+					res.setDeskInfo(convert2DeskInfo(desk));
 					
 					allSessionMap.get(p2.getPlayerId()).getBasicRemote().sendObject(res);
 				}
@@ -273,6 +277,7 @@ public class Allocator {
 				Player nextPlayer = desk.getPlayerList().get(nextIndex);
 				
 				PlayRes res = new PlayRes(RespType.playFollow.toString(), "请跟牌");
+				res.setLastPlayerFollow(true);
 				
 				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendObject(res);
 			}
@@ -315,5 +320,30 @@ public class Allocator {
 		
 		//客户端判断不为-1，则由该序号的玩家开始叫地主 
 		desk.setDizhuIndex(new Random().nextInt(3));
+	}
+	
+	
+	private List<DeskListView> convert2DeskList(List<Desk> list){
+		
+		List<DeskListView> viewList = new ArrayList<DeskListView>(list.size());
+		for(Desk desk : list){
+			DeskListView view = new DeskListView();
+			view.setNum(desk.getDeskNum());
+			view.setPulyerCount(desk.getPlayerList() == null ? 0 : desk.getPlayerList().size());
+			
+			viewList.add(view);
+		}
+		
+		return viewList;
+	}
+	
+	private DeskInfoView convert2DeskInfo(Desk desk){
+		DeskInfoView deskInfo = new DeskInfoView();
+		deskInfo.setNum(desk.getDeskNum());
+		deskInfo.setCurrentIndex(desk.getCurrentIndex());
+		deskInfo.setLastPokerList(desk.getCurrentPokers());
+		deskInfo.setPlayerList(desk.getPlayerList());
+		
+		return deskInfo;
 	}
 }

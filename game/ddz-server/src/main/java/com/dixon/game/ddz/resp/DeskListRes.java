@@ -2,17 +2,17 @@ package com.dixon.game.ddz.resp;
 
 import java.util.List;
 
-import com.dixon.game.ddz.bean.Desk;
+import com.dixon.game.ddz.common.bean.DeskListView;
 
 public class DeskListRes extends BaseRes {
-	private List<Desk> desks;
+	private List<DeskListView> desks;
 	public DeskListRes(String respType, String respDesc) {
 		super(respType, respDesc);
 	}
-	public List<Desk> getDesks() {
+	public List<DeskListView> getDesks() {
 		return desks;
 	}
-	public void setDesks(List<Desk> desks) {
+	public void setDesks(List<DeskListView> desks) {
 		this.desks = desks;
 	}
 }

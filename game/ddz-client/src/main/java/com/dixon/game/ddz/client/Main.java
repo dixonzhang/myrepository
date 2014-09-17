@@ -34,10 +34,11 @@ public class Main {
         client.start();  
    
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));  
-        String input = "aaaaaaaaaaaaaaaaaa";  
+        String input = "";  
         try {  
             do{  
                 input = br.readLine();  
+                System.out.println(input);
                 if(!input.equals("exit"))  
                     client.session.getBasicRemote().sendText(input);  
    
