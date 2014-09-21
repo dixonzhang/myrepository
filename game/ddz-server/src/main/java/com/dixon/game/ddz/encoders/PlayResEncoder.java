@@ -6,9 +6,8 @@ import javax.websocket.EndpointConfig;
 
 import net.sf.json.JSONObject;
 
-import com.dixon.game.ddz.resp.DeskInfoRes;
-import com.dixon.game.ddz.resp.DeskListRes;
-import com.dixon.game.ddz.resp.PlayRes;
+import com.dixon.game.ddz.common.resp.PlayRes;
+
 
 public class PlayResEncoder implements Encoder.Text<PlayRes> {
 

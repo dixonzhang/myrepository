@@ -25,10 +25,10 @@ import com.dixon.game.ddz.common.message.GrabMessage;
 import com.dixon.game.ddz.common.message.JoinMessage;
 import com.dixon.game.ddz.common.message.Message;
 import com.dixon.game.ddz.common.message.PlayMessage;
-import com.dixon.game.ddz.resp.BaseRes;
-import com.dixon.game.ddz.resp.DeskInfoRes;
-import com.dixon.game.ddz.resp.DeskListRes;
-import com.dixon.game.ddz.resp.PlayRes;
+import com.dixon.game.ddz.common.resp.BaseRes;
+import com.dixon.game.ddz.common.resp.DeskInfoRes;
+import com.dixon.game.ddz.common.resp.DeskListRes;
+import com.dixon.game.ddz.common.resp.PlayRes;
 import com.dixon.game.ddz.utils.DizhuShuffler;
 
 public class Allocator {
