@@ -6,7 +6,8 @@ import javax.websocket.EndpointConfig;
 
 import net.sf.json.JSONObject;
 
-import com.dixon.game.ddz.resp.BaseRes;
+import com.dixon.game.ddz.common.resp.BaseRes;
+
 
 public class BaseResEncoder implements Encoder.Text<BaseRes> {
 

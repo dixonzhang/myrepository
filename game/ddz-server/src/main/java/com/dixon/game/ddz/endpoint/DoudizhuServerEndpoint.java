@@ -19,12 +19,12 @@ import com.dixon.game.ddz.common.enu.ChatType;
 import com.dixon.game.ddz.common.enu.ColourType;
 import com.dixon.game.ddz.common.enu.RespType;
 import com.dixon.game.ddz.common.message.Message;
+import com.dixon.game.ddz.common.resp.BaseRes;
 import com.dixon.game.ddz.decoders.MessageTextDecoder;
 import com.dixon.game.ddz.encoders.BaseResEncoder;
 import com.dixon.game.ddz.encoders.DeskInfoResEncoder;
 import com.dixon.game.ddz.encoders.DeskListResEncoder;
 import com.dixon.game.ddz.encoders.PlayResEncoder;
-import com.dixon.game.ddz.resp.BaseRes;
 import com.dixon.game.ddz.service.Allocator;
 
 @ServerEndpoint(

@@ -1,5 +1,7 @@
 package com.dixon.game.ddz.common.bean;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import com.dixon.game.ddz.common.enu.ColourType;
@@ -68,25 +70,55 @@ public class Poker {
 	
 	public String getName() {
 		if(type == ColourType.dawang)
-			name = "大王";
+			name = "dawang";
 		else if(type == ColourType.xiaowang)
-			name = "小王";
+			name = "xiaowang";
 		else{
 			if(num == 1)
-				name = type + " A";
+				name = type + "_a";
 			else if(num == 11)
-				name = type + " J";
+				name = type + "_j";
 			else if(num == 12)
-				name = type + " Q";
+				name = type + "_q";
 			else if(num == 13)
-				name = type + " K";
+				name = type + "_k";
 			else
-				name = type + " " + num;
+				name = type + "" + num;
 		}
 		
 		return name;
 	}
 
+	/**
+	 * 获取所有牌名
+	 * @return
+	 */
+	public static List<String> getAllName(){
+		List<String> list = new ArrayList<String>(54);
+		for(ColourType ct : ColourType.values()){
+			if(ct == ColourType.dawang)
+				list.add(ColourType.dawang.toString());
+			else if(ct == ColourType.xiaowang)
+				list.add(ColourType.xiaowang.toString());
+			else{
+				
+				for(int num = 1; num <=13; num++){
+					if(num == 1)
+						list.add(ct + "_a");
+					else if(num == 11)
+						list.add(ct + "_j");
+					else if(num == 12)
+						list.add(ct + "_q");
+					else if(num == 13)
+						list.add(ct + "_k");
+					else
+						list.add(ct + "" + num);
+				}
+			}
+		}
+		return list;
+	}
+	
 	public int getNum() {
 		return num;
 	}

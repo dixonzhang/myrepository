@@ -6,8 +6,8 @@ import javax.websocket.EndpointConfig;
 
 import net.sf.json.JSONObject;
 
-import com.dixon.game.ddz.resp.DeskInfoRes;
-import com.dixon.game.ddz.resp.DeskListRes;
+import com.dixon.game.ddz.common.resp.DeskListRes;
+
 
 public class DeskListResEncoder implements Encoder.Text<DeskListRes> {
 
