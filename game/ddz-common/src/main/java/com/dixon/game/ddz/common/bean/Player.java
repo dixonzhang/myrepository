@@ -3,11 +3,11 @@ package com.dixon.game.ddz.common.bean;
 import java.util.List;
 
 import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.PlayerType;
 
 public class Player {
 	private String playerId;
-	//是否准备就绪
-	private boolean ready;
+	private PlayerType playerType;
 	//用户剩下的牌
 	private List<Poker> pokerList;
 	
@@ -18,11 +18,11 @@ public class Player {
 		this.playerId = playerId;
 	}
 	
-	public boolean isReady() {
-		return ready;
+	public PlayerType getPlayerType() {
+		return playerType;
 	}
-	public void setReady(boolean ready) {
-		this.ready = ready;
+	public void setPlayerType(PlayerType playerType) {
+		this.playerType = playerType;
 	}
 	public List<Poker> getPokerList() {
 		return pokerList;

@@ -2,8 +2,11 @@ package com.dixon.game.ddz.common.bean;
 
 import java.util.List;
 
+import com.dixon.game.ddz.common.enu.DeskType;
+
 public class DeskInfoView {
 	private int num;
+	private DeskType deskType;
 	
 	private List<Player> playerList;
 	
@@ -17,6 +20,14 @@ public class DeskInfoView {
 
 	public void setNum(int num) {
 		this.num = num;
+	}
+
+	public DeskType getDeskType() {
+		return deskType;
+	}
+
+	public void setDeskType(DeskType deskType) {
+		this.deskType = deskType;
 	}
 
 	public List<Player> getPlayerList() {

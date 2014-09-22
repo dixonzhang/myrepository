@@ -24,6 +24,8 @@ import com.dixon.game.ddz.common.bean.DeskListView;
 import com.dixon.game.ddz.common.bean.Player;
 import com.dixon.game.ddz.common.bean.Poker;
 import com.dixon.game.ddz.common.enu.ChatType;
+import com.dixon.game.ddz.common.enu.DeskType;
+import com.dixon.game.ddz.common.enu.PlayerType;
 import com.dixon.game.ddz.common.enu.RespType;
 import com.dixon.game.ddz.common.message.GrabMessage;
 import com.dixon.game.ddz.common.message.JoinMessage;
@@ -74,14 +76,16 @@ public class Allocator {
 	public void allocate(Message msg) throws IOException, EncodeException{
 		if(ChatType.valueOf(msg.getChatType()) == ChatType.join)
 			join((JoinMessage)msg);
+		if(ChatType.valueOf(msg.getChatType()) == ChatType.leave)
+//			join((JoinMessage)msg);
 		if(ChatType.valueOf(msg.getChatType()) == ChatType.ready)
 			ready(msg);
+		if(ChatType.valueOf(msg.getChatType()) == ChatType.grab)
+			grab((GrabMessage)msg);
 		if(ChatType.valueOf(msg.getChatType()) == ChatType.play)
 			play((PlayMessage)msg);
 		if(ChatType.valueOf(msg.getChatType()) == ChatType.logout)
 			logout(msg);
-		if(ChatType.valueOf(msg.getChatType()) == ChatType.grab)
-			grab((GrabMessage)msg);
 	}
 	
 	
@@ -130,6 +134,7 @@ public class Allocator {
 		
 		if(null != msg.getDeskId()){
 			Desk desk = deskMap.get(msg.getDeskId());
+			desk.setDeskType(DeskType.ready);
 			Vector<Player> playerList = desk.getPlayerList();
 			if(playerList == null){
 				playerList = new Vector<Player>(3);
@@ -140,6 +145,7 @@ public class Allocator {
 				
 				Player p = new Player();
 				p.setPlayerId(msg.getPlayerId());
+				p.setPlayerType(PlayerType.reading);
 				
 				playerList.add(p);
 				
@@ -167,20 +173,23 @@ public class Allocator {
 			List<Player> playerList = desk.getPlayerList();
 			for(Player p : playerList){
 				if(p.getPlayerId().equals(msg.getPlayerId())){
-					p.setReady(true);
+					p.setPlayerType(PlayerType.readied);
 					
 					//看是否全部都已准备就绪，是的话就可以发牌了
 					if(playerList.size() == 3){
-						int readyCount = 0;
+						int allReadyCount = 0;
 						for(Player p2 : playerList){
-							if(p2.isReady())
-								readyCount++;
+							if(PlayerType.readied == p2.getPlayerType())
+								allReadyCount++;
 						}
 						
-						if(3 == readyCount){
+						if(3 == allReadyCount){
 							// 发牌
+							desk.setDeskType(DeskType.deal);
 							deal(desk);
 						}
+						else
+							desk.setDeskType(DeskType.ready);
 					}
 					
 					// 通知同桌用户
@@ -214,30 +223,32 @@ public class Allocator {
 		
 		Desk desk = userDeskMap.get(playerId);
 		
-		desk.currentIndexAdd();
+		int nextIndex = desk.currentIndexAdd();
 		desk.grabTimesAdd();
 		
-		if(msg.isGrab()){//当前用户抢地主
-			for(int i = 0; i < desk.getPlayerList().size(); i++){
-				if(playerId.equals(desk.getPlayerList().get(i).getPlayerId())){
+		for(int i = 0; i < desk.getPlayerList().size(); i++){
+			if(playerId.equals(desk.getPlayerList().get(i).getPlayerId())){
+				if(msg.isGrab()){
 					desk.setDizhuIndex(i);
-					break;
 				}
 			}
+			desk.getPlayerList().get(i).setPlayerType(PlayerType.waiting);
 		}
+		desk.getPlayerList().get(nextIndex).setPlayerType(PlayerType.grab);
 		
-		notifyDeskInfoToAll(desk, desk.getPlayerList());
 		
 		//抢完地主
 		if(4 == desk.getGrabTimes()){
+			for(int i = 0; i < desk.getPlayerList().size(); i++){
+				desk.getPlayerList().get(i).setPlayerType(PlayerType.waiting);
+			}
+			
 			// 通知地主出牌
 			Player dizhu = desk.getPlayerList().get(desk.getDizhuIndex());
-			
-			PlayRes res = new PlayRes(RespType.playFirst.toString(), "请出牌");
-			res.setLastPlayerFollow(false);
-			
-			allSessionMap.get(dizhu.getPlayerId()).getBasicRemote().sendObject(res);
+			dizhu.setPlayerType(PlayerType.first);
+			desk.setCurrentIndex(index)
 		}
+		notifyDeskInfoToAll(desk, desk.getPlayerList());
 		
 	}
 	
@@ -339,10 +350,12 @@ public class Allocator {
 			Player player = desk.getPlayerList().get(i);
 			
 			player.setPokerList(desk.getDealPokerMap().get(i));
+			player.setPlayerType(PlayerType.waiting);
 		}
 		
-		//客户端判断不为-1，则由该序号的玩家开始叫地主 
-		desk.setDizhuIndex(new Random().nextInt(3));
+		//随机一个序号，开始抢地主
+		int ci = desk.setCurrentIndex(new Random().nextInt(3));
+		desk.getPlayerList().get(ci).setPlayerType(PlayerType.call);
 	}
 	
 	
@@ -363,6 +376,7 @@ public class Allocator {
 	private DeskInfoView convert2DeskInfo(Desk desk){
 		DeskInfoView deskInfo = new DeskInfoView();
 		deskInfo.setNum(desk.getDeskNum());
+		deskInfo.setDeskType(desk.getDeskType());
 		deskInfo.setCurrentIndex(desk.getCurrentIndex());
 		deskInfo.setLastPokerList(desk.getCurrentPokers());
 		deskInfo.setPlayerList(desk.getPlayerList());

@@ -6,9 +6,12 @@ import java.util.Vector;
 
 import com.dixon.game.ddz.common.bean.Player;
 import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.DeskType;
 
 public class Desk implements Comparable<Desk>{
 	private int deskNum;
+	private DeskType deskType;
+	
 	//玩家，关系出牌顺序
 	private Vector<Player> playerList;
 	
@@ -37,6 +40,10 @@ public class Desk implements Comparable<Desk>{
 		return currentIndex;
 	}
 	
+	public int setCurrentIndex(int index){
+		return currentIndex = index;
+	}
+	
 	public int grabTimesAdd(){
 		return ++grabTimes;
 	}
@@ -63,6 +70,14 @@ public class Desk implements Comparable<Desk>{
 
 	public void setDeskNum(int deskNum) {
 		this.deskNum = deskNum;
+	}
+
+	public DeskType getDeskType() {
+		return deskType;
+	}
+
+	public void setDeskType(DeskType deskType) {
+		this.deskType = deskType;
 	}
 
 	public Vector<Player> getPlayerList() {
