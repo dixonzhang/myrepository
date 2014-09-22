@@ -8,6 +8,7 @@ import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
+import javax.websocket.PongMessage;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
@@ -75,6 +76,17 @@ public class DoudizhuServerEndpoint {
 			}
     	}
     }
+    
+    /**
+     * 服务端对所有客户端发送ping消息，这里处理客户端的pong消息
+     * @param session
+     * @param pong
+     */
+    @OnMessage
+    public void onPong(Session session, PongMessage pong){
+    	System.out.println("pong " + session + " " + pong.getApplicationData().toString());
+    }
+    
     @OnClose
     public void onClose(Session peer) {
     	allocator.logout(peer);

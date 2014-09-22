@@ -1,6 +1,7 @@
 package com.dixon.game.ddz.service;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -10,6 +11,9 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.websocket.EncodeException;
 import javax.websocket.Session;
@@ -46,6 +50,25 @@ public class Allocator {
 			
 			deskMap.put(i, desk);
 		}
+		
+		//心跳， 30秒一次
+		ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+		executorService.scheduleAtFixedRate(new Runnable() {
+			@Override
+			public void run() {
+				//向所有客户端发送ping
+				for(Iterator<Session> it = allSessionMap.values().iterator(); it.hasNext(); ){
+					ByteBuffer bb = ByteBuffer.allocate(0);
+					try {
+						it.next().getBasicRemote().sendPing(bb);
+					} catch (IllegalArgumentException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}, 30, 30, TimeUnit.SECONDS);
 	}
 	
 	public void allocate(Message msg) throws IOException, EncodeException{
