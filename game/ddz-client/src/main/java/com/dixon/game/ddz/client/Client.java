@@ -1,6 +1,7 @@
 package com.dixon.game.ddz.client;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import javax.websocket.ClientEndpoint;
@@ -18,8 +19,11 @@ import net.sf.json.JSONObject;
 
 @ClientEndpoint  
 public class Client {
+	private Session session;
+	
 	@OnOpen
 	public void onOpen(Session session) {
+		this.session = session;
 		System.out
 				.println("Connected to endpoint: " + session.getBasicRemote());
 //		try {
@@ -41,6 +45,11 @@ public class Client {
 			if(RespType.error == respType || RespType.notify == respType){
 				System.out.println(json.getString("respDesc"));
 			}
+			else if(RespType.ping == respType){
+				System.out.println("received ping message");
+				byte b = 1;
+				session.getBasicRemote().sendPong(ByteBuffer.allocate(1).put(b));
+			}
 			else if(RespType.deskList == respType){
 				String deskListStr = json.getString("desks");
 				
@@ -57,7 +66,7 @@ public class Client {
 				DeskInfoView deskInfo = (DeskInfoView)JSONObject.toBean(JSONObject.fromObject(json.getString("deskInfo")), DeskInfoView.class);
 				System.out.println("桌号： " + deskInfo.getNum());
 				System.out.println("当前序号： " + deskInfo.getCurrentIndex());
-				System.out.println(deskInfo.getLastPokerList());
+				System.out.println(deskInfo.getLastAction());
 				System.out.println(deskInfo.getPlayerList());
 			}
 			else if(RespType.playFirst == respType){
@@ -89,6 +98,8 @@ public class Client {
 		
 	}
 	
-	
+	public void pong(){
+		
+	}
 	
 }

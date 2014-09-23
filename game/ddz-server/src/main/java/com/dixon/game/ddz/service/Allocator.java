@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -19,10 +20,13 @@ import javax.websocket.EncodeException;
 import javax.websocket.Session;
 
 import com.dixon.game.ddz.bean.Desk;
+import com.dixon.game.ddz.bean.SessionBean;
 import com.dixon.game.ddz.common.bean.DeskInfoView;
 import com.dixon.game.ddz.common.bean.DeskListView;
+import com.dixon.game.ddz.common.bean.LastAction;
 import com.dixon.game.ddz.common.bean.Player;
 import com.dixon.game.ddz.common.bean.Poker;
+import com.dixon.game.ddz.common.enu.ActionType;
 import com.dixon.game.ddz.common.enu.ChatType;
 import com.dixon.game.ddz.common.enu.DeskType;
 import com.dixon.game.ddz.common.enu.PlayerType;
@@ -34,16 +38,18 @@ import com.dixon.game.ddz.common.message.PlayMessage;
 import com.dixon.game.ddz.common.resp.BaseRes;
 import com.dixon.game.ddz.common.resp.DeskInfoRes;
 import com.dixon.game.ddz.common.resp.DeskListRes;
-import com.dixon.game.ddz.common.resp.PlayRes;
 import com.dixon.game.ddz.utils.DizhuShuffler;
 
 public class Allocator {
 	//用户与session映射
-	private static ConcurrentMap<String, Session> allSessionMap = new ConcurrentHashMap<String, Session>(100);
+	private static ConcurrentMap<String, SessionBean> allSessionMap = new ConcurrentHashMap<String, SessionBean>(100);
 	//用户与所在桌映射
 	private static ConcurrentMap<String, Desk> userDeskMap = new ConcurrentHashMap<String, Desk>(100);
 	//桌id与桌的映射
-	private static ConcurrentMap<Integer, Desk> deskMap = new ConcurrentHashMap<Integer, Desk>(10);	
+	private static ConcurrentMap<Integer, Desk> deskMap = new ConcurrentHashMap<Integer, Desk>(10);
+	
+	private List<SessionBean> heartBearSessionList = null;
+	private long timeoutTimeMillis = 60 * 1000;
 	
 	public Allocator(){
 		for(int i = 1; i <= 10; i++){
@@ -58,14 +64,34 @@ public class Allocator {
 		executorService.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
+				System.out.println("removing heartBearSessionList size is " + heartBearSessionList.size());
+				//移除上一次发送ping没响应的客户端
+				if(heartBearSessionList != null && !heartBearSessionList.isEmpty()){
+					for(SessionBean sb : heartBearSessionList){
+						try {
+							sb.getSession().close();
+							logout(sb.getSession());
+							System.out.println("removed " + sb);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				
+				System.out.println("all session client size is " + allSessionMap.size());
 				//向所有客户端发送ping
-				for(Iterator<Session> it = allSessionMap.values().iterator(); it.hasNext(); ){
-					ByteBuffer bb = ByteBuffer.allocate(0);
+				heartBearSessionList = new ArrayList<SessionBean>(allSessionMap.size()/2);
+				for(Iterator<SessionBean> it = allSessionMap.values().iterator(); it.hasNext(); ){
+					SessionBean sb = it.next();
+					if((System.currentTimeMillis() - sb.getLastActiveTime().getTime()) > timeoutTimeMillis){
+						System.out.println("sending heartbear " + sb);
+						heartBearSessionList.add(sb);
+					}
+				}
+				for(SessionBean sb : heartBearSessionList){
 					try {
-						it.next().getBasicRemote().sendPing(bb);
+						sb.getSession().getAsyncRemote().sendObject(new BaseRes(RespType.ping.toString(), ""));
 					} catch (IllegalArgumentException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
@@ -73,7 +99,25 @@ public class Allocator {
 		}, 30, 30, TimeUnit.SECONDS);
 	}
 	
+	/**
+	 * 处理客户端的pong响应
+	 * @param session
+	 */
+	public void onPong(Session session){
+		for(Iterator<SessionBean> it = heartBearSessionList.iterator(); it.hasNext(); ){
+			SessionBean sb = it.next();
+			if(sb.getSession().getId().equals(session.getId())){
+				sb.setLastActiveTime(new Date());
+				it.remove();
+			}
+		}
+	}
+	
 	public void allocate(Message msg) throws IOException, EncodeException{
+		//更新session最后活动的时间
+		SessionBean sb = allSessionMap.get(msg.getPlayerId());
+		sb.setLastActiveTime(new Date());
+		
 		if(ChatType.valueOf(msg.getChatType()) == ChatType.join)
 			join((JoinMessage)msg);
 		if(ChatType.valueOf(msg.getChatType()) == ChatType.leave)
@@ -91,7 +135,12 @@ public class Allocator {
 	
 	public void login(Session session, Message msg) throws IOException, EncodeException{
 		if(allSessionMap.get(msg.getPlayerId()) == null && null != msg.getPlayerId() && !"".equals(msg.getPlayerId())){
-			allSessionMap.put(msg.getPlayerId(), session);
+			SessionBean sb = new SessionBean();
+			sb.setPlayerId(msg.getPlayerId());
+			sb.setLastActiveTime(new Date());
+			sb.setSession(session);
+			
+			allSessionMap.put(msg.getPlayerId(), sb);
 			
 			// 返回桌信息
 			List<Desk> list = new ArrayList<Desk>();
@@ -110,9 +159,9 @@ public class Allocator {
 	}
 	
 	public void logout(Session session){
-		for(Iterator<Entry<String, Session>> it = allSessionMap.entrySet().iterator(); it.hasNext(); ){
-			Entry<String, Session> entry = it.next();
-			if(entry.getValue() == session){
+		for(Iterator<Entry<String, SessionBean>> it = allSessionMap.entrySet().iterator(); it.hasNext(); ){
+			Entry<String, SessionBean> entry = it.next();
+			if(entry.getValue().getSession() == session){
 				String userId = entry.getKey();
 				
 				remove(userId);
@@ -145,16 +194,15 @@ public class Allocator {
 				
 				Player p = new Player();
 				p.setPlayerId(msg.getPlayerId());
-				p.setPlayerType(PlayerType.reading);
 				
 				playerList.add(p);
 				
 				// 同一桌的客户端亦返回信息
-				notifyDeskInfoToAll(desk, playerList);
+				notifyDeskInfoToAll(desk, playerList, null, null);
 			}
 			else{
 				// 已满，告知客户端
-				allSessionMap.get(msg.getPlayerId()).getBasicRemote().sendObject(new BaseRes(RespType.deskFull.toString(), "此桌已满人，请重新选桌"));
+				allSessionMap.get(msg.getPlayerId()).getSession().getBasicRemote().sendObject(new BaseRes(RespType.deskFull.toString(), "此桌已满人，请重新选桌"));
 			}
 		}
 		
@@ -173,45 +221,33 @@ public class Allocator {
 			List<Player> playerList = desk.getPlayerList();
 			for(Player p : playerList){
 				if(p.getPlayerId().equals(msg.getPlayerId())){
-					p.setPlayerType(PlayerType.readied);
-					
-					//看是否全部都已准备就绪，是的话就可以发牌了
-					if(playerList.size() == 3){
-						int allReadyCount = 0;
-						for(Player p2 : playerList){
-							if(PlayerType.readied == p2.getPlayerType())
-								allReadyCount++;
-						}
-						
-						if(3 == allReadyCount){
-							// 发牌
-							desk.setDeskType(DeskType.deal);
-							deal(desk);
-						}
-						else
-							desk.setDeskType(DeskType.ready);
-					}
-					
-					// 通知同桌用户
-					notifyDeskInfoToAll(desk, playerList);
+					p.setReady(true);
 					
 					break;
 				}
 			}
+			//看是否全部都已准备就绪，是的话就可以发牌了
+			if(playerList.size() == 3){
+				int allReadyCount = 0;
+				for(Player p2 : playerList){
+					if(p2.isReady())
+						allReadyCount++;
+				}
+				
+				if(3 == allReadyCount){
+					// 发牌
+					desk.setDeskType(DeskType.deal);
+					deal(desk);
+				}
+				else
+					desk.setDeskType(DeskType.ready);
+			}
+			
+			// 通知同桌用户
+			notifyDeskInfoToAll(desk, playerList, null, null);
 		}
 	}
 
-	private void notifyDeskInfoToAll(Desk desk, List<Player> playerList)
-			throws IOException, EncodeException {
-		for(Player p2 : playerList){
-			
-			DeskInfoRes res = new DeskInfoRes(RespType.deskInfo.toString(), "获取桌信息成功");
-			res.setDeskInfo(convert2DeskInfo(desk));
-			
-			allSessionMap.get(p2.getPlayerId()).getBasicRemote().sendObject(res);;
-		}
-	}
-	
 	/**
 	 * 抢地主
 	 * @param msg
@@ -223,32 +259,34 @@ public class Allocator {
 		
 		Desk desk = userDeskMap.get(playerId);
 		
-		int nextIndex = desk.currentIndexAdd();
-		desk.grabTimesAdd();
+		LastAction lastAction = new LastAction();
+		lastAction.setActionType(ActionType.noGrab);
 		
 		for(int i = 0; i < desk.getPlayerList().size(); i++){
 			if(playerId.equals(desk.getPlayerList().get(i).getPlayerId())){
 				if(msg.isGrab()){
 					desk.setDizhuIndex(i);
+					lastAction.setActionType(ActionType.grab);
 				}
 			}
-			desk.getPlayerList().get(i).setPlayerType(PlayerType.waiting);
 		}
-		desk.getPlayerList().get(nextIndex).setPlayerType(PlayerType.grab);
 		
+		desk.grabTimesAdd();
+		
+		PlayerType playerType = null;
 		
 		//抢完地主
 		if(4 == desk.getGrabTimes()){
-			for(int i = 0; i < desk.getPlayerList().size(); i++){
-				desk.getPlayerList().get(i).setPlayerType(PlayerType.waiting);
-			}
-			
-			// 通知地主出牌
-			Player dizhu = desk.getPlayerList().get(desk.getDizhuIndex());
-			dizhu.setPlayerType(PlayerType.first);
-			desk.setCurrentIndex(index)
+			desk.setDeskType(DeskType.play);
+			playerType = PlayerType.first;
+			//将地主牌
+			desk.getPlayerList().get(desk.getDizhuIndex()).getPokerList().addAll(desk.getDealPokerMap().get(3));
 		}
-		notifyDeskInfoToAll(desk, desk.getPlayerList());
+		else{
+			desk.setDeskType(DeskType.grab);
+			desk.currentIndexAdd();
+		}
+		notifyDeskInfoToAll(desk, desk.getPlayerList(), lastAction, playerType);
 		
 	}
 	
@@ -263,31 +301,37 @@ public class Allocator {
 		List<Poker> pokerList = msg.getPokerList();
 		
 		Desk desk = userDeskMap.get(msg.getPlayerId());
+		
+		LastAction lastAction = new LastAction();
+		lastAction.setPokers(pokerList);
+		
+		desk.currentIndexAdd();
+		
+		PlayerType playerType = null;
+		
 		//不出牌，过
 		if(null == pokerList || pokerList.isEmpty()){
 			//过
 			desk.passTimesAdd();
-			int nextIndex = desk.currentIndexAdd();
-			Player nextPlayer = desk.getPlayerList().get(nextIndex);
 			
-			//过了两次， 让下一家重新出牌
+			lastAction.setActionType(ActionType.pass);
+			
+			//过了两次， 重新出牌
 			if(2 == desk.getPassTimes()){
-				PlayRes res = new PlayRes(RespType.playFirst.toString(), "请出牌");
-				res.setLastPlayerFollow(false);
-				
-				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendObject(res);
+				playerType = PlayerType.first;
 			}
 			else{
 				//下一家跟牌
-				PlayRes res = new PlayRes(RespType.playFollow.toString(), "请跟牌");
-				res.setLastPlayerFollow(false);
-				
-				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendObject(res);
+				playerType = PlayerType.follow;
 			}
 		}
 		else{
 			//重置过的次数
 			desk.passTimesReset();
+			lastAction.setActionType(ActionType.follow);
+			
+			//下一家跟牌
+			playerType = PlayerType.follow;
 			
 			Vector<Poker> followPokerList = new Vector<Poker>(pokerList);
 			//当前出的牌
@@ -303,21 +347,33 @@ public class Allocator {
 					DeskInfoRes res = new DeskInfoRes(RespType.win.toString(), "获胜");
 					res.setDeskInfo(convert2DeskInfo(desk));
 					
-					allSessionMap.get(p2.getPlayerId()).getBasicRemote().sendObject(res);
+					allSessionMap.get(p2.getPlayerId()).getSession().getBasicRemote().sendObject(res);
 				}
 			}
 			else{
-				int nextIndex = desk.currentIndexAdd();
-				Player nextPlayer = desk.getPlayerList().get(nextIndex);
 				
-				PlayRes res = new PlayRes(RespType.playFollow.toString(), "请跟牌");
-				res.setLastPlayerFollow(true);
-				
-				allSessionMap.get(nextPlayer.getPlayerId()).getBasicRemote().sendObject(res);
 			}
 		}
+		
+		notifyDeskInfoToAll(desk, desk.getPlayerList(), lastAction, playerType);
 	}
 
+	private void notifyDeskInfoToAll(Desk desk, List<Player> playerList, LastAction lastAction, PlayerType playerType)
+			throws IOException, EncodeException {
+		
+		DeskInfoView deskView = convert2DeskInfo(desk);
+		deskView.setLastAction(lastAction);
+		deskView.setDizhuPoker(desk.getDealPokerMap().get(3));
+		deskView.setPlayerType(playerType);
+		
+		for(Player p2 : playerList){
+			DeskInfoRes res = new DeskInfoRes(RespType.deskInfo.toString(), "获取桌信息成功");
+			res.setDeskInfo(deskView);
+			
+			allSessionMap.get(p2.getPlayerId()).getSession().getBasicRemote().sendObject(res);
+		}
+	}
+	
 	private void remove(String playerId){
 		//移除session
 		allSessionMap.remove(playerId);
@@ -350,12 +406,10 @@ public class Allocator {
 			Player player = desk.getPlayerList().get(i);
 			
 			player.setPokerList(desk.getDealPokerMap().get(i));
-			player.setPlayerType(PlayerType.waiting);
 		}
 		
 		//随机一个序号，开始抢地主
-		int ci = desk.setCurrentIndex(new Random().nextInt(3));
-		desk.getPlayerList().get(ci).setPlayerType(PlayerType.call);
+		desk.setCurrentIndex(new Random().nextInt(3));
 	}
 	
 	
@@ -378,7 +432,6 @@ public class Allocator {
 		deskInfo.setNum(desk.getDeskNum());
 		deskInfo.setDeskType(desk.getDeskType());
 		deskInfo.setCurrentIndex(desk.getCurrentIndex());
-		deskInfo.setLastPokerList(desk.getCurrentPokers());
 		deskInfo.setPlayerList(desk.getPlayerList());
 		
 		return deskInfo;

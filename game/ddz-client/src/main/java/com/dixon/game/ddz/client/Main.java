@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.ByteBuffer;
 
 import javax.websocket.ContainerProvider;
 import javax.websocket.DeploymentException;
@@ -40,7 +41,11 @@ public class Main {
                 input = br.readLine();  
                 System.out.println(input);
                 if(!input.equals("exit"))  
-                    client.session.getBasicRemote().sendText(input);  
+                    client.session.getBasicRemote().sendText(input);
+                if(input.equals("pong")){
+                	byte b = 1;
+                	client.session.getBasicRemote().sendPong(ByteBuffer.allocate(1).put(b));
+                }
    
             }while(!input.equals("exit"));  
    

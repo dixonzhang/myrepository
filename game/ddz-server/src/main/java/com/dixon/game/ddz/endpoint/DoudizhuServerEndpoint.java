@@ -85,6 +85,7 @@ public class DoudizhuServerEndpoint {
     @OnMessage
     public void onPong(Session session, PongMessage pong){
     	System.out.println("pong " + session + " " + pong.getApplicationData().toString());
+    	allocator.onPong(session);
     }
     
     @OnClose
