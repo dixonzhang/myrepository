@@ -1,8 +1,10 @@
 package com.dixon.game.ddz.endpoint;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
@@ -33,6 +35,8 @@ import com.dixon.game.ddz.service.Allocator;
 	decoders = {MessageTextDecoder.class }
 )
 public class DoudizhuServerEndpoint {
+	private Logger logger = Logger.getLogger(getClass().getName());
+	
 	static Allocator allocator;
 	
 	static{
@@ -42,7 +46,7 @@ public class DoudizhuServerEndpoint {
     @OnOpen
     public void onOpen(Session session) {
     	//登录成功返回桌信息
-    	System.out.println("onOpen " + session.getId());
+    	logger.info("onOpen " + session.getId());
     	try {
 			session.getBasicRemote().sendObject(new BaseRes(RespType.notify.toString(), "连接成功！"));;
 		} catch (IOException e) {
@@ -54,14 +58,19 @@ public class DoudizhuServerEndpoint {
     
 //    @OnMessage
 //    public void onMessage(Session session, String message) {
-//    	System.out.println("text:" + message);
+//    	logger.info("text:" + message);
 //    }
     
     @OnMessage
     public void onMessage(Session session, Message message) {
     	try {
+    		logger.info(message.getChatType());
 	    	if(ChatType.valueOf(message.getChatType()) == ChatType.login){
 				allocator.login(session, message);
+	    	}
+	    	else if(ChatType.valueOf(message.getChatType()) == ChatType.ping){
+	    		byte b = 1;
+	    		session.getAsyncRemote().sendPong(ByteBuffer.allocate(1).put(b));
 	    	}
 	    	else{
 	    		allocator.allocate(message);
@@ -84,7 +93,7 @@ public class DoudizhuServerEndpoint {
      */
     @OnMessage
     public void onPong(Session session, PongMessage pong){
-    	System.out.println("pong " + session + " " + pong.getApplicationData().toString());
+    	logger.info("pong " + session + " " + pong.getApplicationData().toString());
     	allocator.onPong(session);
     }
     
@@ -109,7 +118,7 @@ public class DoudizhuServerEndpoint {
 //    	Message msg = (Message)JSONObject.toBean(json, Message.class);
 //    	
 //    	if(ChatType.valueOf(msg.getChatType()) == ChatType.login){
-//    		System.out.println("ddd");
+//    		logger.info("ddd");
 //    	}
     	
     	

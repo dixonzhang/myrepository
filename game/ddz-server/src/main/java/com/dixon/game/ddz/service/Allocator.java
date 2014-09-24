@@ -1,7 +1,6 @@
 package com.dixon.game.ddz.service;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -15,6 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.websocket.EncodeException;
 import javax.websocket.Session;
@@ -41,6 +41,8 @@ import com.dixon.game.ddz.common.resp.DeskListRes;
 import com.dixon.game.ddz.utils.DizhuShuffler;
 
 public class Allocator {
+	private Logger logger = Logger.getLogger(getClass().getName());
+	
 	//用户与session映射
 	private static ConcurrentMap<String, SessionBean> allSessionMap = new ConcurrentHashMap<String, SessionBean>(100);
 	//用户与所在桌映射
@@ -48,7 +50,7 @@ public class Allocator {
 	//桌id与桌的映射
 	private static ConcurrentMap<Integer, Desk> deskMap = new ConcurrentHashMap<Integer, Desk>(10);
 	
-	private List<SessionBean> heartBearSessionList = null;
+	private List<SessionBean> heartBearSessionList = new ArrayList<SessionBean>();
 	private long timeoutTimeMillis = 60 * 1000;
 	
 	public Allocator(){
@@ -64,39 +66,44 @@ public class Allocator {
 		executorService.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
-				System.out.println("removing heartBearSessionList size is " + heartBearSessionList.size());
-				//移除上一次发送ping没响应的客户端
-				if(heartBearSessionList != null && !heartBearSessionList.isEmpty()){
+				try {
+					logger.info("removing heartBearSessionList size is " + heartBearSessionList.size());
+					//移除上一次发送ping没响应的客户端
+					if(heartBearSessionList != null && !heartBearSessionList.isEmpty()){
+						for(SessionBean sb : heartBearSessionList){
+							try {
+								sb.getSession().close();
+								logout(sb.getSession());
+								logger.info("removed " + sb);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					}
+					
+					logger.info("all session client size is " + allSessionMap.size());
+					//向所有客户端发送ping
+					heartBearSessionList = new ArrayList<SessionBean>(allSessionMap.size()/2);
+					for(Iterator<SessionBean> it = allSessionMap.values().iterator(); it.hasNext(); ){
+						SessionBean sb = it.next();
+						if((System.currentTimeMillis() - sb.getLastActiveTime().getTime()) > timeoutTimeMillis){
+							heartBearSessionList.add(sb);
+						}
+					}
+					logger.info("need send heartbear size is " + heartBearSessionList.size());
 					for(SessionBean sb : heartBearSessionList){
 						try {
-							sb.getSession().close();
-							logout(sb.getSession());
-							System.out.println("removed " + sb);
-						} catch (IOException e) {
+							logger.info("sending heartbear " + sb);
+							sb.getSession().getAsyncRemote().sendObject(new BaseRes(RespType.ping.toString(), ""));
+						} catch (IllegalArgumentException e) {
 							e.printStackTrace();
 						}
 					}
-				}
-				
-				System.out.println("all session client size is " + allSessionMap.size());
-				//向所有客户端发送ping
-				heartBearSessionList = new ArrayList<SessionBean>(allSessionMap.size()/2);
-				for(Iterator<SessionBean> it = allSessionMap.values().iterator(); it.hasNext(); ){
-					SessionBean sb = it.next();
-					if((System.currentTimeMillis() - sb.getLastActiveTime().getTime()) > timeoutTimeMillis){
-						System.out.println("sending heartbear " + sb);
-						heartBearSessionList.add(sb);
-					}
-				}
-				for(SessionBean sb : heartBearSessionList){
-					try {
-						sb.getSession().getAsyncRemote().sendObject(new BaseRes(RespType.ping.toString(), ""));
-					} catch (IllegalArgumentException e) {
-						e.printStackTrace();
-					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
-		}, 30, 30, TimeUnit.SECONDS);
+		}, 0, 30, TimeUnit.SECONDS);
 	}
 	
 	/**
@@ -107,6 +114,7 @@ public class Allocator {
 		for(Iterator<SessionBean> it = heartBearSessionList.iterator(); it.hasNext(); ){
 			SessionBean sb = it.next();
 			if(sb.getSession().getId().equals(session.getId())){
+				logger.info("update heartbear " + sb);
 				sb.setLastActiveTime(new Date());
 				it.remove();
 			}
@@ -363,7 +371,8 @@ public class Allocator {
 		
 		DeskInfoView deskView = convert2DeskInfo(desk);
 		deskView.setLastAction(lastAction);
-		deskView.setDizhuPoker(desk.getDealPokerMap().get(3));
+		if(desk.getDealPokerMap() != null)
+			deskView.setDizhuPoker(desk.getDealPokerMap().get(3));
 		deskView.setPlayerType(playerType);
 		
 		for(Player p2 : playerList){
@@ -430,7 +439,7 @@ public class Allocator {
 	private DeskInfoView convert2DeskInfo(Desk desk){
 		DeskInfoView deskInfo = new DeskInfoView();
 		deskInfo.setNum(desk.getDeskNum());
-		deskInfo.setDeskType(desk.getDeskType());
+		deskInfo.setDeskType(desk.getDeskType().toString());
 		deskInfo.setCurrentIndex(desk.getCurrentIndex());
 		deskInfo.setPlayerList(desk.getPlayerList());
 		
