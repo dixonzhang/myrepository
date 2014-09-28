@@ -10,6 +10,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -65,30 +66,26 @@ public class EchoClient {
 		}
 	}
 	@Sharable
-	private class EchoClientHandler extends ChannelInboundHandlerAdapter{
+	private class EchoClientHandler extends SimpleChannelInboundHandler<ByteBuf>{
+		
 		@Override
-		public void channelActive(ChannelHandlerContext ctx) throws Exception {
-			ctx.write(Unpooled.copiedBuffer("hello", CharsetUtil.UTF_8));
+		protected void channelRead0(ChannelHandlerContext ctx, ByteBuf in)
+				throws Exception {
+				System.out.println("Client received: " + ByteBufUtil
+						.hexDump(in.readBytes(in.readableBytes())));
 		}
 		
 		@Override
-		public void channelRead(ChannelHandlerContext ctx, Object msg)
-				throws Exception {
-			
-			ByteBuf in = null;
-			if(msg instanceof ByteBuf)
-				in = (ByteBuf)msg;
-			
-			if(in != null)
-				System.out.println("Client received: " + ByteBufUtil
-						.hexDump(in.readBytes(in.readableBytes())));
-			
+		public void channelActive(ChannelHandlerContext ctx) throws Exception {
+			ctx.writeAndFlush(Unpooled.copiedBuffer("hello", CharsetUtil.UTF_8));
 		}
 		
 		@Override
 		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
 				throws Exception {
 			super.exceptionCaught(ctx, cause);
+			cause.printStackTrace();
+			ctx.close();
 		}
 	}
 }
