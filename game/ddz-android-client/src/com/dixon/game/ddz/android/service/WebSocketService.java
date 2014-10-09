@@ -103,6 +103,10 @@ public class WebSocketService extends Service{
 		public void onTextMessage(String payload) {
 			Log.d(TAG, "Got echo: " + payload);
 			RespType respType = getRespType(payload);
+			if(RespType.ping == respType){
+				//处理服务端的ping
+//				mConnection.send
+			}
 			
 			Message message = new Message();
 			Bundle bundle = new Bundle();
