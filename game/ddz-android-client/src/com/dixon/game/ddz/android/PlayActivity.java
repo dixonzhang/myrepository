@@ -101,7 +101,7 @@ public class PlayActivity extends Activity{
 						//绘制
 						Log.d(TAG, "桌号： " + deskInfo.getNum());
 						Log.d(TAG, "当前序号： " + deskInfo.getCurrentIndex());
-						Log.d(TAG, deskInfo.getLastPokerList().toString());
+//						Log.d(TAG, deskInfo.getLastAction().toString());
 						Log.d(TAG, deskInfo.getPlayerList().toString());
 						
 						playView.updateDeskInfo(deskInfo);

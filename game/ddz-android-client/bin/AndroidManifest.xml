@@ -31,7 +31,6 @@
                 <action android:name="com.dixon.game.ddz.android.service.WEBSOCKET_SERVICE" />
             </intent-filter>
         </service>
-        <activity android:name=".SecondActivity"></activity>
         
     </application>
 
