@@ -1,0 +1,96 @@
+package com.mama100.monitorcenter.service;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.telnet.TelnetClient;
+import org.springframework.stereotype.Service;
+
+import com.mama100.monitorcenter.message.ConnectionMessage;
+
+@Service
+public class TelnetService {
+	private static String DEFAULT_ENV = "dev";
+	List<ConnectionMessage> list = null;
+	
+	public TelnetService() {
+		load();
+	}
+
+	private void load() {
+		ResourceBundle bundleParam = ResourceBundle.getBundle(getRuntimeEnv().concat("/ipports"));
+		
+		list = new ArrayList<ConnectionMessage>(bundleParam.keySet().size());
+		
+		for(Iterator<String> it = bundleParam.keySet().iterator(); it.hasNext(); ){
+			String key = it.next();
+			if(StringUtils.isNoneBlank(key)){
+				String serverName = key;
+				String value = bundleParam.getString(key);
+				
+				int index = value.indexOf(":");
+				if(index == -1)
+					continue;
+				
+				String ip = value.substring(0, index);
+				String port = value.substring(index+1);
+				
+				ConnectionMessage cm = new ConnectionMessage();
+				cm.setAppName(serverName);
+				cm.setIp(ip);
+				cm.setPort(new Integer(port));
+				
+				list.add(cm);
+			}
+		}
+	}
+	
+	/**
+	 * 获取ipports.properties文件配置的所有服务的连通情况
+	 * @return
+	 */
+	public List<ConnectionMessage> getAllServerConnectionStatus(){
+		if(null == list || list.isEmpty())
+			load();
+		
+		for(ConnectionMessage cm : list){
+			cm.setConnected(testTelnet(cm.getIp(), cm.getPort()));
+		}
+		
+		return list;
+	}
+
+	/**
+	 * telnet ip 端口是否连通
+	 * @param ip
+	 * @param port
+	 * @return
+	 */
+	public boolean testTelnet(String ip, int port){
+		TelnetClient tc = new TelnetClient();
+		tc.setDefaultTimeout(2000);//两秒超时
+		
+		try {
+			tc.connect(ip, port);
+			return tc.isConnected();
+		} catch (Exception e) {
+			return false;
+		}
+	}
+	
+	private String getRuntimeEnv() {
+		String env = System.getProperty("runtime.env");
+		if (env == null || "".equals(env)) {
+			System.setProperty("runtime.env", DEFAULT_ENV);
+			env = DEFAULT_ENV;
+		}
+		return env;
+	}
+	
+	public static void main(String[] args) {
+		new TelnetService().getAllServerConnectionStatus();
+	}
+}

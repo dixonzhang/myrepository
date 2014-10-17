@@ -1,0 +1,30 @@
+package com.mama100.monitorcenter.controller;
+
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Logger;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.mama100.monitorcenter.jms.MnitCMessageListener;
+
+@Controller
+public class MonitorController {
+	Logger logger = Logger.getLogger(getClass().getName());
+	
+	@RequestMapping("/monitor")
+	public String index(Model model){
+		ConcurrentMap<String, ConcurrentMap<String, String>> monitorMap = MnitCMessageListener.monitorMap;
+		model.addAttribute("monitorMap", monitorMap);
+		
+		return "monitor";
+	}
+	
+	@RequestMapping("/monitor/clean")
+	public @ResponseBody String clean(){
+		MnitCMessageListener.monitorMap.clear();
+		return "success";
+	}
+}

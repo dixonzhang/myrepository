@@ -1,0 +1,4 @@
+#list split by ','
+#mq.imqAddressList=127.0.0.1:7676,127.0.0.1:7677
+mq.imqAddressList=127.0.0.1:7676
+mq.queue=mnit.queue

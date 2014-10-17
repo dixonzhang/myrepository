@@ -1,0 +1,66 @@
+package com.mama100.monitorcenter.controller;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
+import java.util.logging.Logger;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.mama100.monitorcenter.jms.MnitCMessageListener;
+import com.mama100.monitorcenter.message.ExceptionMessage;
+import com.mama100.monitorcenter.service.TelnetService;
+
+@Controller
+public class ExceptionController {
+	Logger logger = Logger.getLogger(getClass().getName());
+	
+	@Autowired
+	private TelnetService telnetService;
+	
+	/**
+	 * 主页， 显示连接情况
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/monitor/exception/index")
+	public String index(Model model){
+		List<ExceptionMessage> list = new ArrayList<ExceptionMessage>();
+		for(Iterator<Vector<ExceptionMessage>> it = MnitCMessageListener.EXCEPTION_MAP.values().iterator(); it.hasNext(); ){
+			Vector<ExceptionMessage> vector = it.next();
+			if(null != vector && !vector.isEmpty()){
+				list.addAll(vector);
+			}
+		}
+		
+		Collections.sort(list);
+		
+		model.addAttribute("excepList", list);
+//		model.addAttribute("type", StringUtils.isBlank(type) ? "all" : "cat");
+		
+		return "exception";
+	}
+	
+	
+	@RequestMapping("/monitor/exception/detail")
+	public String detail(Model model){
+		List<ExceptionMessage> list = new ArrayList<ExceptionMessage>();
+		for(Iterator<Vector<ExceptionMessage>> it = MnitCMessageListener.EXCEPTION_MAP.values().iterator(); it.hasNext(); ){
+			Vector<ExceptionMessage> vector = it.next();
+			if(null != vector && !vector.isEmpty()){
+				list.addAll(vector);
+			}
+		}
+		
+		Collections.sort(list);
+		
+		model.addAttribute("excepList", list);
+		
+		return "exception_detail";
+	}
+}

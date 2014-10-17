@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"	
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+       http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       " default-lazy-init="true">
+       
+    <context:property-placeholder location="classpath:/${runtime.env}/jms.properties" />
+    
+	<!-- 启动Spring MVC的注解功能，完成请求和注解POJO的映射 -->
+	<context:component-scan base-package="com.mama100.monitorcenter" />
+	
+	
+	<!-- 用户操作记录保存线程池 -->
+	<bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" scope="singleton" lazy-init="true">
+		<property name="corePoolSize" value="2" />
+		<!--队列的数目 -->
+		<property name="queueCapacity" value="1000" />
+		<property name="maxPoolSize" value="4" />
+		<!--空闲线程的时间 -->
+		<property name="keepAliveSeconds" value="600" />
+		<!--如果高负载,重试添加当前的任务 -->
+		<property name="rejectedExecutionHandler">
+			<bean class="java.util.concurrent.ThreadPoolExecutor$AbortPolicy" />
+		</property>
+		<!--线程的名字 -->	
+		<property name="threadNamePrefix" value="task" />
+	</bean>
+	
+	<!-- 缓存 -->
+	<bean id="cacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" p:configLocation="classpath:/ehcache-conf/ehcache.xml" />
+	<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager" p:cacheManager-ref="cacheManagerFactory" />
+
+   	<!-- JMS设置 -->
+	<import resource="spring-jms.xml" />
+</beans>

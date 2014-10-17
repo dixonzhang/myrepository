@@ -1,0 +1,92 @@
+package com.mama100.monitorcenter.jms;
+
+import java.util.Enumeration;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * 消息中心的入口处理器
+ * 
+ * @author Raphael
+ * 
+ */
+public class MnitCMessageListener implements MessageListener {
+	Logger logger = Logger.getLogger(getClass().getName());
+	org.apache.log4j.Logger receiveLog = org.apache.log4j.Logger.getLogger("RECEIVE");
+	
+	private static String APP_NAME = "appName";
+	private static String TARGET = "target";
+	private static String APP_ADDR = "appAddr";
+
+	//监控的项目状态值都放在内存
+	public static ConcurrentMap<String, ConcurrentMap<String, String>> monitorMap = new ConcurrentHashMap<String, ConcurrentMap<String,String>>(5);
+	
+	@Override
+    public void onMessage(Message message) {
+    	if(message instanceof MapMessage){
+    		MapMessage mm = (MapMessage) message;
+    		try {
+				if(StringUtils.isNotBlank(mm.getString(APP_NAME)) && StringUtils.isNotBlank(mm.getString(TARGET)) && StringUtils.isNotBlank(mm.getString(APP_ADDR))){
+					set2MonitorMap(mm);
+				}
+				else
+					logger.info("Unuseful MapMessage, because it is not contains key 'appName'、 'target' and 'appAddr'.");
+					
+			} catch (JMSException e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);
+			}
+    	}
+    }
+    
+    //将消息放入内容，
+    @SuppressWarnings("rawtypes")
+	private void set2MonitorMap(MapMessage mm) throws JMSException{
+    	String appName = mm.getString(APP_NAME);
+    	String target = mm.getString(TARGET);
+    	String appAddr = mm.getString(APP_ADDR);
+    	
+    	String key = appName.concat(".").concat(target).concat("(").concat(appAddr).concat(")");
+    	
+    	ConcurrentMap<String, String> map = monitorMap.get(key);
+    	if(!monitorMap.containsKey(key)){
+    		map = new ConcurrentHashMap<String, String>(5);
+    	}
+    	else
+    		map.clear();
+    	
+    	StringBuffer logInfo = new StringBuffer(100);
+    	logInfo.append(">>received ")
+    	.append(key)
+    	.append(" [ ");
+    	
+    	Enumeration names = mm.getMapNames();
+    	while(names.hasMoreElements()){
+    		String name = (String)names.nextElement();
+    		if(APP_NAME.equals(name) || APP_ADDR.equals(name) || TARGET.equals(name))
+    			continue;
+    		
+    		String value = mm.getString(name);
+    		map.put(name, value);
+    		
+    		logInfo.append(name)
+    		.append("=")
+    		.append(value)
+    		.append(" ");
+    	}
+    	
+    	logInfo.append("] ");
+
+    	monitorMap.put(key, map);
+    	
+    	receiveLog.info(logInfo.toString());
+    }
+}

@@ -1,0 +1,35 @@
+package com.mama100.monitorcenter.controller;
+
+import java.util.List;
+import java.util.logging.Logger;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.mama100.monitorcenter.message.ConnectionMessage;
+import com.mama100.monitorcenter.service.TelnetService;
+
+@Controller
+public class ConnectionController {
+	Logger logger = Logger.getLogger(getClass().getName());
+	
+	@Autowired
+	private TelnetService telnetService;
+	
+	/**
+	 * 主页， 显示连接情况
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/")
+	public String index(Model model){
+		
+		List<ConnectionMessage> list = telnetService.getAllServerConnectionStatus();
+		model.addAttribute("connList", list);
+		
+		return "index";
+	}
+	
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="true" monitoring="autodetect">
+	<diskStore path="java.io.tmpdir" />
+	<defaultCache maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="500000" timeToLiveSeconds="50000000" overflowToDisk="true"
+		maxElementsOnDisk="10000000" diskPersistent="false" diskExpiryThreadIntervalSeconds="120" memoryStoreEvictionPolicy="LRU" />
+	
+	<!-- 连接状态数据缓存，因只是缓存每次请求异步加载的telnet结果，用完就失效了，所以存活期60秒即可 -->
+	<cache name="connectionMapCache" maxElementsInMemory="100" maxElementsOnDisk="20000" eternal="false" overflowToDisk="true" diskSpoolBufferSizeMB="20"
+		timeToIdleSeconds="60" timeToLiveSeconds="60" memoryStoreEvictionPolicy="LFU" />
+	
+	<!-- 池状态，每个应用模块对应一个element，element数量应该十几条而已， 故将失效时间设置为5小时-->
+	<cache name="poolStatusMapCache" maxElementsInMemory="8" maxElementsOnDisk="20000" eternal="false" overflowToDisk="true" diskSpoolBufferSizeMB="20"
+		timeToIdleSeconds="18000" timeToLiveSeconds="18000" memoryStoreEvictionPolicy="LFU" />
+		
+	<!-- 异常，每个应用对应一个element,element数量应该十条以内，缓存五天 -->
+	<cache name="exceptionMapCache" maxElementsInMemory="5" maxElementsOnDisk="20000" eternal="false" overflowToDisk="true" diskSpoolBufferSizeMB="20"
+		timeToIdleSeconds="432000" timeToLiveSeconds="432000" memoryStoreEvictionPolicy="LFU" />
+</ehcache>

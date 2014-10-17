@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+	<!-- OpenMQ 连接工厂配置 -->
+	<bean id="mqFactoryFactory" class="com.mama100.monitorcenter.jms.OpenMQConnectionFactoryFactory">
+		<property name="properties">
+			<props>
+				<prop key="imqAddressList">${mc.jms.addr}</prop>
+			</props>
+		</property>
+	</bean>
+	<bean id="mqFactory" factory-bean="mqFactoryFactory"
+		factory-method="createConnectionFactory" />
+	<bean id="springFactory"
+		class="org.springframework.jms.connection.SingleConnectionFactory">
+		<property name="targetConnectionFactory" ref="mqFactory" />
+	</bean>
+
+	<!-- OpenMQ 消息队列，有正常，加急和紧急三个队列 -->
+	<bean id="mnitQueue" class="com.sun.messaging.Queue">
+		<constructor-arg type="java.lang.String" value="mnit.queue" />
+	</bean>
+
+	<!-- OpenMQ 监听器 -->
+	<bean id="mnitContainer" lazy-init="false"
+		class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="springFactory" />
+		<property name="destination" ref="mnitQueue" />
+		<property name="messageListener">
+			<bean class="com.mama100.monitorcenter.jms.MnitCMessageListener" />
+		</property>
+	</bean>
+
+	<!-- Spring的JMS模板 -->
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="springFactory" />
+		<!-- 应答模式 AUTO_ACKNOWLEDGE=1 CLIENT_ACKNOWLEDGE=2 DUPS_OK_ACKNOWLEDGE=3 
+			SESSION_TRASACTED=0 -->
+		<property name="sessionAcknowledgeMode" value="1" />
+	</bean>
+</beans>

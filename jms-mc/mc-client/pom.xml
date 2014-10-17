@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.mama100.monitorcenter</groupId>
+	<artifactId>monitor-client</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>monitor-client</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- 依赖版本号 -->
+		<junit.version>4.11</junit.version>
+		<javax.jms.version>2.0</javax.jms.version>
+		<org.glassfish.mq.version>5.0</org.glassfish.mq.version>
+	</properties>
+	
+	<!-- 设置依赖包所在的maven nexus仓库 -->
+	<repositories>
+		<repository>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>internal-repo</id>
+			<name>Internal repository of mama100.com</name>
+			<url>http://192.168.8.15:8081/nexus/content/groups/public/</url>
+		</repository>
+	</repositories>
+
+	<!-- 把自己的jar包上传到maven nexus仓库 -->
+	<distributionManagement>
+		<repository>
+			<uniqueVersion>false</uniqueVersion>
+			<id>nexus-releases</id>
+			<name>Internal Repository</name>
+			<url>http://nexus.scm.it/nexus/content/repositories/releases/</url>
+		</repository>
+		<snapshotRepository>
+			<uniqueVersion>true</uniqueVersion>
+			<id>nexus-snapshots</id>
+			<name>Internal Snapshots</name>
+			<url>http://nexus.scm.it/nexus/content/repositories/snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>javax.jms</groupId>
+			<artifactId>javax.jms-api</artifactId>
+			<version>${javax.jms.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.mq</groupId>
+			<artifactId>imq</artifactId>
+			<version>${org.glassfish.mq.version}</version>
+		</dependency>
+	</dependencies>
+</project>
